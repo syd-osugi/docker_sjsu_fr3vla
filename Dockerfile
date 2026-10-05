@@ -115,17 +115,18 @@ ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib:/usr/local/lib/python3.12/pyrealsense2
 # ==============================================================================
 
 # ==============================================================================
-# INTEL REALSENSE ROS 2 WRAPPER INSTALLATION
+# INTEL REALSENSE ROS 2 WRAPPER & REALHAND ROS 2 SDK INSTALLATION
 # ==============================================================================
 # Build workspace under root first to handle rosdep configurations cleanly
 RUN mkdir -p /opt/ros2_ws/src \
     && cd /opt/ros2_ws/src \
     && git clone https://github.com/realsenseai/realsense-ros.git -b ros2-master \
+    && git clone https://github.com/RealHand-Robotics/realbot-ros2-sdk.git -b main \
     && cd /opt/ros2_ws \
     && source /opt/ros/jazzy/setup.bash \
     && apt-get update \
     && rosdep install -i --from-path src --rosdistro jazzy --skip-keys=librealsense2 -y \
-    && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release \
+    && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/home/${USERNAME}/.venv/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 # Fix folder ownership so your local workspace remains isolated
@@ -144,7 +145,7 @@ WORKDIR /home/${USERNAME}/ros2_ws
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/${USERNAME}/.bashrc && \
     echo "source /opt/ros2_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc && \
     echo "source /home/${USERNAME}/.venv/bin/activate" >> /home/${USERNAME}/.bashrc && \
-    echo "source /home/${USERNAME}/ros2_ws/install/setup.bash" >> /home/${USERNAME}/.bashrc
+    echo "export PYTHONPATH=\$PYTHONPATH:/home/${USERNAME}/.venv/lib/python3.12/site-packages" >> /home/${USERNAME}/.bashrc
 
 ENV BASH_ENV=/home/${USERNAME}/.bashrc
 CMD ["bash"]
