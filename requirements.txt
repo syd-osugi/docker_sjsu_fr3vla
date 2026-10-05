@@ -1,0 +1,10 @@
+# Foundational mathematical array handling
+numpy>=1.26.0
+
+# OpenCV bindings for image processing and windows
+opencv-python>=4.9.0
+
+# Common ROS 2 tooling dependencies
+setuptools
+wheel
+pip
