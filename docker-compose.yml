@@ -1,0 +1,43 @@
+services:
+  ros2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: "${USERNAME:-sydney}"
+        USER_UID: "${USER_UID:-1000}"
+        USER_GID: "${USER_GID:-1000}"
+    image: ros2-jazzy-base:latest
+    container_name: sydneyvla
+
+    # Keep the container attached to the terminal for interactive ROS work.
+    stdin_open: true
+    tty: true
+
+    # Host networking makes ROS 2 DDS discovery work with other ROS processes
+    # running on the Ubuntu host or on the local network.
+    network_mode: host
+    ipc: host
+
+    # Required for broad access to USB, serial, camera, GPIO, and other host
+    # devices. Remove this and use individual `devices:` entries for a tighter
+    # security policy when the exact hardware is known.
+    privileged: true
+
+    environment:
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-0}"
+      PYTHONUNBUFFERED: "1"
+      DISPLAY: "${DISPLAY:-:0}"
+
+    working_dir: /home/${USERNAME:-sydney}/ros2_ws
+    command: bash
+
+    volumes:
+      - /dev:/dev
+      - /run/udev:/run/udev:ro
+      - /lib/modules:/lib/modules:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./src:/home/${USERNAME:-sydney}/ros2_ws/src
+      - ./build:/home/${USERNAME:-sydney}/ros2_ws/build
+      - ./install:/home/${USERNAME:-sydney}/ros2_ws/install
+      - ./log:/home/${USERNAME:-sydney}/ros2_ws/log
