@@ -74,5 +74,12 @@ Test camera node with ros2 run
 Test camera code from launch  
 ```ros2 launch realsense2_camera rs_launch.py depth_module.depth_profile:=1280x720x30 pointcloud.enable:=true```
 
-Check Realhand Ros2 Communication
-```ros2 launch realhand_ros2 hand.launch.py model:=L6 side:=right interface_name:=can0```
+Check Realhand Ros2 Communication. Change the model and side (right/lelft) if necessary.  
+Launch with default internal rates.  
+```ros2 launch realhand_ros2 hand.launch.py model:=L6 side:=right interface_name:=can0```  
+Launch with specific the telemetry tuning.  
+```ros2 launch realhand_ros2 hand.launch.py model:=L6 side:=right interface_name:=can0   poll_on_start:=true stream_on_start:=true stream_queue_size:=300   poll_intervals_json:='{"angle": 0.03333333333333333, "force_sensor": 0.06666666666666667, "torque": 0.2, "speed": 0.5, "acceleration": 0.5, "temperature": 1.0, "current": 0.5, "fault": 1.0}'```  
+Open a new terminal in the same running container. Publish to change the hand position. Must be ran from src/.  
+```python3 realhand_pub_position.py```  
+Open a new terminal in the same running container. Subscribe to view the hand state.  
+```python3 realhand_sub_all_state.py```
