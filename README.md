@@ -39,7 +39,7 @@ Access video
 ```sudo chmod 666 /dev/video*```
 
 
-Realhand Hardware Access
+Realhand Hardware Access (will have to be ran each time the hand is connected)
 Bring down the interface to configure parameters cleanly  
 ```sudo ip link set can0 down```  
 Set the interface to standard 1 Mbps (1000000) baud rate for robotic hands  

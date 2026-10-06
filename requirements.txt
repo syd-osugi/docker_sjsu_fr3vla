@@ -11,3 +11,4 @@ pip
 
 # RealHand Robotics Core Python SDK (Hands Only)
 realhand[gui] @ git+https://github.com/RealHand-Robotics/realbot-python-sdk.git
+

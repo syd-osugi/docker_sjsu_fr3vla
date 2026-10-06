@@ -23,6 +23,7 @@ services:
     # devices. Remove this and use individual `devices:` entries for a tighter
     # security policy when the exact hardware is known.
     privileged: true
+    
 
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-0}"
