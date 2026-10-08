@@ -12,3 +12,10 @@ pip
 # RealHand Robotics Core Python SDK (Hands Only)
 realhand[gui] @ git+https://github.com/RealHand-Robotics/realbot-python-sdk.git
 
+# Franka Python SDK Bindings via PyPI
+pylibfranka
+
+# Franka ROS 2 Underlying Workspace Dependencies
+vcstool
+lxml
+jinja2

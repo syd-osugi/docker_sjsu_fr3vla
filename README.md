@@ -83,3 +83,11 @@ Open a new terminal in the same running container. Publish to change the hand po
 ```python3 realhand_pub_position.py```  
 Open a new terminal in the same running container. Subscribe to view the hand state.  
 ```python3 realhand_sub_all_state.py```
+
+
+Check Franka Communication.
+Check communication with franka. Must know franka ip address.
+```ping 10.31.82.199```  
+```communication_test 10.31.82.199```  
+May exchange with  ```franka_print_position.py``` with ```franka_move_gripper.py```
+```python3 franka_print_position.py --ip 10.31.82.199```

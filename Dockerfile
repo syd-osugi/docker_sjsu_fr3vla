@@ -19,6 +19,7 @@ RUN apt-get update \
         build-essential \
         cmake \
         git \
+        wget \
         # Python venv dependencies
         python3-colcon-common-extensions \
         python3.12 \
@@ -29,6 +30,8 @@ RUN apt-get update \
         # Web Camera Build Dependencies
         udev \
         usbutils \
+        # PyQt5 System Libraries for the RealHand GUI
+        python3-pyqt5 \
         # Ros Demo Nodes
         ros-jazzy-demo-nodes-cpp \
         # RealSense Build Dependencies
@@ -39,6 +42,12 @@ RUN apt-get update \
         libglfw3-dev \
         libglu1-mesa-dev \
         freeglut3-dev \
+        # Franka Robotics System Compilation Prerequisites
+        libeigen3-dev \
+        libpoco-dev \
+        libfmt-dev \
+        pybind11-dev \
+        libgmock-dev \
     && if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then rosdep init; fi \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
@@ -115,22 +124,46 @@ ENV PYTHONPATH=$PYTHONPATH:/usr/local/lib:/usr/local/lib/python3.12/pyrealsense2
 # ==============================================================================
 
 # ==============================================================================
-# INTEL REALSENSE ROS 2 WRAPPER & REALHAND ROS 2 SDK INSTALLATION
+# STANDALONE C++ LIBFRANKA BUILD FROM SOURCE
 # ==============================================================================
-# Build workspace under root first to handle rosdep configurations cleanly
-RUN mkdir -p /opt/ros2_ws/src \
-    && cd /opt/ros2_ws/src \
+WORKDIR /tmp
+RUN wget https://github.com/frankarobotics/libfranka/releases/download/0.21.3/libfranka_0.21.3_noble_amd64.deb \
+    && dpkg -i libfranka_0.21.3_noble_amd64.deb \
+    && rm libfranka_0.21.3_noble_amd64.deb
+
+# Configure Global Python Paths so pyrealsense2 and your virtual environment match perfectly
+ENV PYTHONPATH=/home/${USERNAME}/.venv/lib/python3.12/site-packages:/usr/local/lib:/usr/local/lib/python3.12/pyrealsense2:$PYTHONPATH
+# ==============================================================================
+
+# ==============================================================================
+# ROS 2 UNDERLAY WORKSPACE (realsense-ros, realbot-ros2, franka_ros2)
+# ==============================================================================
+WORKDIR /opt/ros2_ws
+RUN mkdir -p src \
+    && cd src \
     && git clone https://github.com/realsenseai/realsense-ros.git -b ros2-master \
     && git clone https://github.com/RealHand-Robotics/realbot-ros2-sdk.git -b main \
+    && git clone https://github.com/frankarobotics/franka_ros2.git -b jazzy \
     && cd /opt/ros2_ws \
     && source /opt/ros/jazzy/setup.bash \
+    && vcs import src < src/franka_ros2/dependency.repos --recursive --skip-existing \
+    && touch src/franka_ros2/franka_gazebo/COLCON_IGNORE \
+    && touch src/franka_ros2/franka_mobile/COLCON_IGNORE \
+    && touch src/franka_ros2/franka_mobile_fr3_duo_moveit_config/COLCON_IGNORE \
+    && touch src/franka_ros2/mobile_fr3_duo_trajectory_controller/COLCON_IGNORE \
+    && touch src/libfranka/COLCON_IGNORE \
     && apt-get update \
-    && rosdep install -i --from-path src --rosdistro jazzy --skip-keys=librealsense2 -y \
-    && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/home/${USERNAME}/.venv/bin/python \
+    && rosdep update \
+    && rosdep install --from-paths src --ignore-src --rosdistro jazzy -y \
+       --skip-keys="librealsense2 realhand libfranka zed_wrapper robotiq_description olive_ros2 franka_gazebo franka_gazebo_hardware franka_gazebo_bringup franka_gripper franka_mobile franka_mobile_fr3_duo_moveit_config mobile_fr3_duo_trajectory_controller robotiq_driver olv_module_descriptions" \
     && rm -rf /var/lib/apt/lists/*
 
-# Fix folder ownership so your local workspace remains isolated
-RUN chown -R "${USERNAME}:${USERNAME}" /opt/ros2_ws
+RUN source /opt/ros/jazzy/setup.bash \
+    && cd /opt/ros2_ws \
+    && colcon build \
+       --parallel-workers 2 \
+       --event-handlers console_cohesion+ \
+       --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 # ==============================================================================
 
 # Set up a writable ROS workspace for the non-root user.
@@ -149,4 +182,3 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/${USERNAME}/.bashrc && \
 
 ENV BASH_ENV=/home/${USERNAME}/.bashrc
 CMD ["bash"]
-
