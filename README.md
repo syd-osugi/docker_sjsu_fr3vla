@@ -89,5 +89,78 @@ Check Franka Communication.
 Check communication with franka. Must know franka ip address.
 ```ping 10.31.82.199```  
 ```communication_test 10.31.82.199```  
+Check Franka python SDK Communication.  
 May exchange with  ```franka_print_position.py``` with ```franka_move_gripper.py```
 ```python3 franka_print_position.py --ip 10.31.82.199```
+
+Check Franka Communication via Ros 2.  
+
+Process: 1. launch file 2. run controller 3. run script 4. read data
+
+
+Check with no hardware.  
+```ros2 launch franka_bringup franka.launch.py robot_type:=fr3 use_fake_hardware:=true load_gripper:=true```
+
+
+Check with real hardware.  
+Check launch files.  
+```ls /opt/ros2_ws/src/franka_ros2/franka_bringup/launch```  
+Check arguments of the launch file.  
+```ros2 launch franka_bringup franka.launch.py --show-args```
+
+List the controllers available.  
+```ros2 control list_controllers```  
+```ros2 topic list```  
+```ros2 action list```  
+
+List the hardware exposed.  
+```ros2 control list_hardware_interfaces```  
+
+If needed, copy the existing controller configuration to edit the controller.yaml (add or modify or remove a controller).  If the controller is modified, must always refer to the modified file as the default file will revert on Docker Container rebuild.
+```cp /opt/ros2_ws/install/franka_bringup/share/franka_bringup/config/controllers.yaml ~/ros2_ws/controllers.yaml```  
+```cat ~/ros2_ws/controllers.yaml```
+
+Run the launch file to access hardware. May list the controllers.yaml file located in the src folder instead of the default franka_bringup location by specifying the controllers.yaml location.  
+ros2 launch franka_bringup <your_launch_file>.launch.py robot_ip:=<ROBOT_IP>  
+```ros2 launch franka_bringup franka.launch.py robot_type:=fr3 robot_ip:=10.31.82.199 load_gripper:=true controllers_yaml:=/home/sydney/ros2_ws/src/controllers.yaml```  
+
+
+
+In a new terminal run a controller listed in controllers.yaml. This loads the arm controller (the launch doesn't do this).  
+ros2 run controller_manager spawner <Controller_Name>  
+```ros2 run controller_manager spawner joint_position_example_controller```  
+In a new terminal, read data.
+```ros2 topic echo /franka_robot_state_broadcaster/current_pose --once```  
+```ros2 topic echo /joint_states --once```
+
+
+Hone the gripper.  
+```ros2 action send_goal /franka_gripper/homing franka_msgs/action/Homing "{}"```
+
+In a new terminal run the franka_ros_client.py. fr3_arm_controller must be active to use franka_ros_client.py.  
+Read joint states.    
+```python3 franka_ros_client.py --echo```  
+Joint 1 +0.1 rad (about 6°), over the default 10 seconds  
+```python franka_ros_client.py --arm 0.1,0,0,0,0,0,0 --delta```  
+Joint 7 move, slower (20 seconds)  
+```python franka_ros_client.py --arm 0,0,0,0,0,0,0.1 --delta --duration 20```
+
+If the first number is negative, use arm=  
+Joint 7 -0.1 rad  
+```python franka_ros_client.py --arm=0,0,0,0,0,0,-0.1 --delta```
+
+All 7 values are target joints within 0.3 radian of the current position. This limit is for safety precautions. Use ```--allow-large``` tag to move over 3 radian.  
+```python franka_ros_client.py --arm 0.0276,0.30,-0.001,-1.576,-0.057,1.837,0.892```
+
+Grasp an object about 3 cm wide, gently. Defaults: width 0.005 m, speed 0.1 m/s, force 60 N.  
+```python franka_ros_client.py --grasp --width 0.03 --speed 0.05 --force 20```
+
+
+
+```python franka_ros_client.py --arm 0,0,0,0,0,0,0.1 --delta \
+  --traj-topic /my_controller/joint_trajectory \
+  --state-topic /franka/joint_states```
+
+
+Must deactive the controller since only once controller can be used at a time.  
+```ros2 control switch_controllers --deactivate joint_position_example_controller```  

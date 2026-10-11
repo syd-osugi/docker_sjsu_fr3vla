@@ -169,6 +169,11 @@ RUN source /opt/ros/jazzy/setup.bash \
 # Set up a writable ROS workspace for the non-root user.
 RUN mkdir -p "/home/${USERNAME}/ros2_ws/src" \
     && chown -R "${USERNAME}:${USERNAME}" "/home/${USERNAME}/ros2_ws"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nano vim \
+    && rm -rf /var/lib/apt/lists/*
+
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}/ros2_ws
 
