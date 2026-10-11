@@ -47,3 +47,4 @@ services:
       - ./build:/home/${USERNAME:-sydney}/ros2_ws/build
       - ./install:/home/${USERNAME:-sydney}/ros2_ws/install
       - ./log:/home/${USERNAME:-sydney}/ros2_ws/log
+      - ./adb-keys:/home/${USERNAME:-sydney}/.android

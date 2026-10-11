@@ -48,6 +48,10 @@ RUN apt-get update \
         libfmt-dev \
         pybind11-dev \
         libgmock-dev \
+        # Text Editors
+        nano \
+        vim \
+        # android-tools-abd \
     && if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then rosdep init; fi \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
@@ -166,12 +170,31 @@ RUN source /opt/ros/jazzy/setup.bash \
        --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 # ==============================================================================
 
+
+# ==============================================================================
+# RUCKIG (jerk-limited trajectory generation) BUILD FROM SOURCE
+# ==============================================================================
+WORKDIR /opt
+RUN git clone --depth 1 https://github.com/pantor/ruckig.git \
+    && cd ruckig \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release .. \
+    && make -j$(nproc) \
+    && make install \
+    && ldconfig \
+    && cd /opt/ruckig \
+    && "/home/${USERNAME}/.venv/bin/python" -m pip install --no-cache-dir . \
+    && chown -R "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.venv" \
+    && cd /opt && rm -rf ruckig
+# ==============================================================================
+
+
 # Set up a writable ROS workspace for the non-root user.
 RUN mkdir -p "/home/${USERNAME}/ros2_ws/src" \
     && chown -R "${USERNAME}:${USERNAME}" "/home/${USERNAME}/ros2_ws"
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends nano vim \
+    && apt-get install -y --no-install-recommends android-tools-adb \
     && rm -rf /var/lib/apt/lists/*
 
 USER ${USERNAME}
