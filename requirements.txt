@@ -19,3 +19,8 @@ pylibfranka
 vcstool
 lxml
 jinja2
+
+# Teleoperation
+ruckig
+hand-tracking-sdk
+matplotlib

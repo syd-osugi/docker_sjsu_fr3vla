@@ -2,5 +2,7 @@ build
 install
 log
 build.log
-Dockerfile
-docker-compose.yml
+
+adb-keys/adb.5037
+adb-keys/adbkey
+adb-keys/adbkey.pub

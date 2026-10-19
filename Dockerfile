@@ -140,6 +140,23 @@ ENV PYTHONPATH=/home/${USERNAME}/.venv/lib/python3.12/site-packages:/usr/local/l
 # ==============================================================================
 
 # ==============================================================================
+# RUCKIG (jerk-limited trajectory generation) BUILD FROM SOURCE
+# ==============================================================================
+WORKDIR /opt
+RUN git clone --depth 1 https://github.com/pantor/ruckig.git \
+    && cd ruckig \
+    && mkdir -p build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release .. \
+    && make -j$(nproc) \
+    && make install \
+    && ldconfig \
+    && cd /opt/ruckig \
+    && "/home/${USERNAME}/.venv/bin/python" -m pip install --no-cache-dir . \
+    && chown -R "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.venv" \
+    && cd /opt && rm -rf ruckig
+# ==============================================================================
+
+# ==============================================================================
 # ROS 2 UNDERLAY WORKSPACE (realsense-ros, realbot-ros2, franka_ros2)
 # ==============================================================================
 WORKDIR /opt/ros2_ws
@@ -148,6 +165,7 @@ RUN mkdir -p src \
     && git clone https://github.com/realsenseai/realsense-ros.git -b ros2-master \
     && git clone https://github.com/RealHand-Robotics/realbot-ros2-sdk.git -b main \
     && git clone https://github.com/frankarobotics/franka_ros2.git -b jazzy \
+    && git clone https://github.com/wengmister/franka-vr-teleop.git \
     && cd /opt/ros2_ws \
     && source /opt/ros/jazzy/setup.bash \
     && vcs import src < src/franka_ros2/dependency.repos --recursive --skip-existing \
@@ -170,24 +188,20 @@ RUN source /opt/ros/jazzy/setup.bash \
        --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
 # ==============================================================================
 
-
 # ==============================================================================
-# RUCKIG (jerk-limited trajectory generation) BUILD FROM SOURCE
+# >>> ADDED: franka-vr-teleop C++ robot client (real-time libfranka controller)
 # ==============================================================================
-WORKDIR /opt
-RUN git clone --depth 1 https://github.com/pantor/ruckig.git \
-    && cd ruckig \
+RUN cd /opt/ros2_ws/src/franka-vr-teleop/robot_client \
     && mkdir -p build && cd build \
-    && cmake -DCMAKE_BUILD_TYPE=Release .. \
-    && make -j$(nproc) \
-    && make install \
-    && ldconfig \
-    && cd /opt/ruckig \
-    && "/home/${USERNAME}/.venv/bin/python" -m pip install --no-cache-dir . \
-    && chown -R "${USERNAME}:${USERNAME}" "/home/${USERNAME}/.venv" \
-    && cd /opt && rm -rf ruckig
+    && cmake -DCMAKE_BUILD_TYPE=Release -DFRANKA_INSTALL_PATH=/usr .. \
+    && make -j2
 # ==============================================================================
-
+ 
+# ==============================================================================
+# hand-tracking-streamer repo (Quest app .apk, scripts/visualizer.py)
+# ==============================================================================
+RUN git clone --depth 1 https://github.com/wengmister/hand-tracking-streamer.git /opt/hand-tracking-streamer
+# ==============================================================================
 
 # Set up a writable ROS workspace for the non-root user.
 RUN mkdir -p "/home/${USERNAME}/ros2_ws/src" \

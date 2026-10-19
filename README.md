@@ -50,6 +50,19 @@ Note: will have to be ran each time the hand is connected.
 4. Verify the ip link has been brought up. The output should include <NOARP, UP, LOWER_UP, ECHO>  
 ```ip link show can0```
 
+## Meta Quest Access
+Create a adb-keys folder within root directory on the host.  
+```mkdir -p adb-keys```  
+Connect the headset to the PC via USB cable. A pop-up requesting USB debugging will be seen through the heatset. Allow debugging via USB.  
+If no pop-up is seen, check whether the device is authorized.  
+```abd devices```  
+If the device is unauthorized, pass through key access. Run the following command on the host.
+``` sudo chown -R 1000:1000 adb-keys```
+
+Run on host to allow local processes to connect to the server.
+```xhost +local:```  
+Revert when finished  
+```xhost -local:```
 
 # Hardware Access Check:  
 ## Ros 2  
@@ -204,3 +217,43 @@ Joint 7 -0.1 rad.
 4. Must deactive the controller since only once controller can be used at a time.  
 ```ros2 control switch_controllers --deactivate fr3_arm_controller```  
 
+# VR Teleoperation
+## Hand-Tracker-Streamer App
+1. If there is any server running on the host, kill it. If an adb server is already running on the host, then the Docker Containers adb will connect to it through a shaired network.  
+```adb kill-server```
+
+2. Start docker container.  
+
+3. Connect the headset to the PC via USB cable. A pop-up requesting USB debugging will be seen through the heatset. Allow debugging via USB.  
+If no pop-up is seen, check whether the device is authorized.  
+```adb devices```  
+If the device is unauthorized, pass through key access. Run the following command on the host.
+``` sudo chown -R 1000:1000 adb-keys```
+
+4. Remaps the port number to the assigned port. 
+The command is in the format: adb reverse tcp:<PORT> tcp:<PORT>  
+```adb reverse tcp:8000 tcp:8000```  
+
+5. Verify the active ports.  
+```adb reverse --list```
+
+6. Start the receiver.  
+The command is in the format: python /opt/hand-tracking-streamer/scripts/visualizer.py --protocol tcp --host <HOST_IP> --port <PORT> --show-fingers  
+```python /opt/hand-tracking-streamer/scripts/visualizer.py --protocol tcp --host 127.0.0.1 --port 8000 --show-fingers```
+
+7. Within the VR app, change the protocol to tcp (wired), the host ip, and the port to match the command from step 6. 
+
+## Franka-Vr-Teleop
+1. View available launch files.  
+```find /opt/ros2_ws/src/franka-vr-teleop -name "*.launch.py"```
+
+2. Read the launch arguments for the UDP port and node. The vr_upd_port is the headset to the Ros2 node; this is the port to be used within the VR headset app. The robot_udp_port is the Ros2 node to the robot client.   
+```ros2 launch franka_vr_teleop vr_control.launch.py --show-args```  
+```ros2 launch franka_vr_teleop vr_control.launch.py```  
+
+### Untested
+bash
+cd /opt/ros2_ws/src/franka-vr-teleop/robot_client/build
+./franka_vr_control_client <ROBOT_IP>
+
+Then, in a second terminal, ros2 launch franka_vr_teleop vr_control.launch.py. Keep your hand still at first and watch what the arm does before making real motions.
