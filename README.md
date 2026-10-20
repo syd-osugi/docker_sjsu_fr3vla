@@ -108,6 +108,7 @@ Change the model and side (right/lelft) if necessary.
 
     Or launch with specific telemetry tuning.  
 ```ros2 launch realhand_ros2 hand.launch.py model:=L6 side:=right interface_name:=can0   poll_on_start:=true stream_on_start:=true stream_queue_size:=300   poll_intervals_json:='{"angle": 0.03333333333333333, "force_sensor": 0.06666666666666667, "torque": 0.2, "speed": 0.5, "acceleration": 0.5, "temperature": 1.0, "current": 0.5, "fault": 1.0}'```  
+
 3. Open a new terminal in the running Docker Container. Publish to change the hand position. Must be ran from src/hardware_tests.  
 ```python3 realhand_pub_position.py```  
 4. Open a new terminal in the same running container. Subscribe to view the hand state.  
@@ -222,7 +223,8 @@ Joint 7 -0.1 rad.
 1. If there is any server running on the host, kill it. If an adb server is already running on the host, then the Docker Containers adb will connect to it through a shaired network.  
 ```adb kill-server```
 
-2. Start docker container.  
+2. Start docker container, then abd server.  
+```abd start-server```  
 
 3. Connect the headset to the PC via USB cable. A pop-up requesting USB debugging will be seen through the heatset. Allow debugging via USB.  
 If no pop-up is seen, check whether the device is authorized.  
@@ -237,11 +239,47 @@ The command is in the format: adb reverse tcp:<PORT> tcp:<PORT>
 5. Verify the active ports.  
 ```adb reverse --list```
 
-6. Start the receiver.  
-The command is in the format: python /opt/hand-tracking-streamer/scripts/visualizer.py --protocol tcp --host <HOST_IP> --port <PORT> --show-fingers  
-```python /opt/hand-tracking-streamer/scripts/visualizer.py --protocol tcp --host 127.0.0.1 --port 8000 --show-fingers```
+6. Start the teleoperation receiver and live joint graphic. Do not run the
+standalone HTS visualizer on the same port at the same time.
+```bash
+python3 src/hardware_tests/vr_realhand_teleop.py \
+  --transport tcp --host 0.0.0.0 --port 8000 --visualize --send
+```
 
-7. Within the VR app, change the protocol to tcp (wired), the host ip, and the port to match the command from step 6. 
+7. Within the VR app, change the protocol to tcp (wired), the host IP to
+`127.0.0.1`, and the port to `8000`.
+
+## VR Realhand Teleoperation
+
+1. Set up can0 via 'Realhand Hardware Access'.  
+
+2. Launch via 'Realhand Ros2 Communciation'.    
+
+3. Start the hand-tracker-streamer app via 'Hand-Tracker-Streamer-App'.  
+
+4. Run vr_realhand_teleop.py with calibration to establish open and closed hand positions. A vr_realhand_calibration.json is saved. If ```--calibrate``` is used and a .json already exists, it will be overwritten.    
+```python3 vr_realhand_teleop.py --calibrate --visualize --send```
+
+    Calibration controls (in the graphic window):  
+        O - capture the currently open hand pose  
+        C - capture the currently closed hand pose  
+        R - reset calibration  
+        Q - close the graphic  
+
+    The default averages 30 frames for each pose of calibration. Use tag to change the frames.  
+    ```--calibration-samples 60```
+
+    To change the calibration file name add ```--calibration-file``` tag.  
+    ```python3 src/hardware_tests/vr_realhand_teleop.py --calibrate --calibration-file <FILE_NAME>.json --visualize --send```
+
+    The default location of the saved calibration file is the currect directory. To specify the calibration file location:  
+    ```--calibration-file <FILE_PATH>/<FILE_NAME>.json```
+
+5. If the calibration file exists:  
+```python3 vr_realhand_teleop.py --visualize --send```
+
+    To specify the file location to use a specific calibration file:  
+    ```python3 vr_realhand_teleop.py --calibration-file <FILE_PATH>/vr_realhand_calibration.json --visualize --send```
 
 ## Franka-Vr-Teleop
 1. View available launch files.  
