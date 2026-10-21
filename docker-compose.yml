@@ -29,10 +29,26 @@ services:
       rtprio: 99
       memlock: -1
 
+    # NVIDIA GPU access (requires nvidia-container-toolkit on the host)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-0}"
       PYTHONUNBUFFERED: "1"
       DISPLAY: "${DISPLAY:-:0}"
+      # For NVIDIA GPU
+      NVIDIA_VISIBLE_DEVICES: "all"
+      NVIDIA_DRIVER_CAPABILITIES: "all"
+      # Hybrid laptop: render GL/Vulkan apps on the NVIDIA GPU instead of the AMD iGPU
+      __NV_PRIME_RENDER_OFFLOAD: "1"
+      __GLX_VENDOR_LIBRARY_NAME: "nvidia"
+      __VK_LAYER_NV_optimus: "NVIDIA_only"
 
     working_dir: /home/${USERNAME:-sydney}/ros2_ws
     command: bash

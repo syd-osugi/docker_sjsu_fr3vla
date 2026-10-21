@@ -9,6 +9,9 @@ ARG USER_GID=1000
 ENV ROS_DISTRO=jazzy
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
+# NVIDIA Container Toolkit: expose all GPUs with compute, graphics, video, and utility capabilities
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=all
 
 SHELL ["/bin/bash", "-c"]
 
@@ -52,6 +55,12 @@ RUN apt-get update \
         nano \
         vim \
         # android-tools-abd \
+        # NVIDIA GPU runtime support (loaders; driver libs are injected by the container toolkit)
+        libvulkan1 \
+        vulkan-tools \
+        libgl1 \
+        libegl1 \
+        libglvnd0 \
     && if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then rosdep init; fi \
     && rosdep update \
     && rm -rf /var/lib/apt/lists/*
